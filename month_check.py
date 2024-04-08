@@ -16,9 +16,8 @@ load_dotenv()
 host = os.getenv('host')
 username = os.getenv('ch_username')
 password = os.getenv('password')
-client_cert = os.getenv('client_cert')
 
-client = clickhouse_connect.get_client(host=host, port=8443, username=username, password=password, interface = "https", client_cert_key = client_cert)
+client = clickhouse_connect.get_client(host=host, port=8443, username=username, password=password, interface = "https")
 
 creds = os.getenv('creds')
 spreadsheet_id = os.getenv('spreadsheet_id')
