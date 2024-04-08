@@ -22,4 +22,4 @@ jobs:
             - name: Install Dependecies
               run: pip install -r requirements.txt
             - name: Run Date Check
-              run: date_check.py
+              run: python date_check.py
