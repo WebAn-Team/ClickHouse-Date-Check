@@ -16,14 +16,12 @@ load_dotenv()
 host = os.getenv('host')
 username = os.getenv('ch_username')
 password = os.getenv('password')
-client_cert = os.getenv('client_cert')
 
 client = clickhouse_connect.get_client(host=host, port=8443, username=username, password=password, interface = "https", ca_cert = client_cert)
 
 creds = os.getenv('creds')
 spreadsheet_id = os.getenv('spreadsheet_id')
 date_range_name = os.getenv('date_range_name')
-client_cert = "/usr/local/share/ca-certificates/Yandex/RootCA.crt"
 
 tables = []
 date_columns = []
