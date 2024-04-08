@@ -1,5 +1,7 @@
 name: Date Check
-on: [push]
+on: 
+  schedule: 
+      - cron: '0 6 * * *'
 
 env:
   host: ${{ secrets.host }}
