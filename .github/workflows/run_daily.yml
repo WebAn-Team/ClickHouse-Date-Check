@@ -5,7 +5,6 @@ env:
   host: ${{ secrets.host }}
   ch_username: ${{ secrets.ch_username }}
   password: ${{ secrets.password }}
-  client_cert: ${{ secrets.client_cert }}
   creds: ${{ secrets.creds }}
   spreadsheet_id: ${{ secrets.spreadsheet_id }}
   date_range_name: ${{ secrets.date_range_name }}
