@@ -20,5 +20,7 @@ jobs:
               uses: actions/checkout@v4
             - name: Install Dependecies
               run: pip install -r requirements.txt
+            - name: Get Certificate
+              run: curl.exe https://storage.yandexcloud.net/cloud-certs/RootCA.pem
             - name: Run Date Check
               run: python date_check.py

@@ -23,7 +23,7 @@ client = clickhouse_connect.get_client(host=host, port=8443, username=username, 
 creds = os.getenv('creds')
 spreadsheet_id = os.getenv('spreadsheet_id')
 date_range_name = os.getenv('date_range_name')
-client_cert = "RootCA.pem"
+client_cert = ".yandex\RootCA.crt"
 
 tables = []
 date_columns = []
