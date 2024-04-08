@@ -1,0 +1,12 @@
+name: Date Check
+on: [push]
+jobs:
+    Date-Check:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+            - name: Install Dependecies
+              run: pip install -r requirements.txt
+            - name: Run Check
+              run: date_check.py
