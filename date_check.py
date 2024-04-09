@@ -71,5 +71,6 @@ for x in range(len(tables)):
     (SELECT DISTINCT toDate("""+date_column+""")
     FROM megafon_dashboards_aggregate."""+table+""")""")
 
-    message_text = "{}:\n{}".format(table, result)
-    send_telegram_message(bot_token, channel_id, message_text)
+    if result.size !=0:
+        message_text = "{}:\n{}".format(table, result)
+        send_telegram_message(bot_token, channel_id, message_text)

@@ -46,30 +46,5 @@ def get_tables():
 if __name__ == "__main__":
   get_tables()
 
-
-
-bot_token = os.getenv('bot_token')
-channel_id = os.getenv('channel_id')
-
-def send_telegram_message(bot_token, channel_id, message):
-    api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    params = {"chat_id": channel_id, "text": message}
-    requests.post(api_url, params)
-
-
-
-for x in range(len(tables)):
-    table = tables[x]
-    date_column = date_columns[x]
-
-    result = client.query_np("""
-    WITH 
-        (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""") AS start,
-        toStartOfDay(now() - INTERVAL 1 MONTH) AS end
-    SELECT DISTINCT toStartOfMonth(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) months
-    WHERE months NOT IN
-    (SELECT DISTINCT toDate("""+date_column+""")
-    FROM megafon_dashboards_aggregate."""+table+""")""")
-    if result.size !=0:
-        message_text = "{}:\n{}".format(table, result)
-        send_telegram_message(bot_token, channel_id, message_text)
+print(tables)
+print(len(tables))
