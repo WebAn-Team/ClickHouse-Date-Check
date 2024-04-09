@@ -65,7 +65,7 @@ for x in range(len(tables)):
     result = client.query_np("""
     WITH 
         (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""") AS start,
-        toStartOfDay(now()) AS end
+        toStartOfDay(now() - INTERVAL 1 MONTH) AS end
     SELECT DISTINCT toStartOfMonth(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) months
     WHERE months NOT IN
     (SELECT DISTINCT toDate("""+date_column+""")

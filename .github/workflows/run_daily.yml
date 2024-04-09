@@ -1,7 +1,7 @@
 name: Date Check
 on: 
   schedule: 
-      - cron: '0 6 * * *'
+      - cron: '0 7 * * 1-5'
 
 env:
   host: ${{ secrets.host }}
@@ -26,3 +26,5 @@ jobs:
               run: sudo mkdir --parents /usr/local/share/ca-certificates/Yandex/ &&  sudo wget "https://storage.yandexcloud.net/cloud-certs/RootCA.pem" --output-document /usr/local/share/ca-certificates/Yandex/RootCA.crt && sudo wget "https://storage.yandexcloud.net/cloud-certs/IntermediateCA.pem"  --output-document /usr/local/share/ca-certificates/Yandex/IntermediateCA.crt && sudo chmod 655 /usr/local/share/ca-certificates/Yandex/RootCA.crt /usr/local/share/ca-certificates/Yandex/IntermediateCA.crt && sudo update-ca-certificates
             - name: Run Date Check
               run: python date_check.py
+            - name: Run Month Check
+              run: python month_check.py
