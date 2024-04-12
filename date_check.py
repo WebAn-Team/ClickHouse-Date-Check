@@ -56,11 +56,12 @@ def send_telegram_message(bot_token, channel_id, message):
     params = {"chat_id": channel_id, "text": message}
     requests.post(api_url, params)
 
-
+message_count = 1
 
 for x in range(len(tables)):
     table = tables[x]
     date_column = date_columns[x]
+    
 
     dateType_column = client.query_np("""
     SELECT name FROM system.columns 
@@ -87,5 +88,6 @@ for x in range(len(tables)):
         FROM megafon_dashboards_aggregate."""+table+""")""")
 
     if result.size !=0:
-        message_text = "{}:\n{}".format(table, result)
+        message_text = "{}. {}:\n{}".format(message_count, table, result)
         send_telegram_message(bot_token, channel_id, message_text)
+        message_count += 1
