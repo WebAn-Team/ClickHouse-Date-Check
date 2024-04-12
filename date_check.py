@@ -62,14 +62,29 @@ for x in range(len(tables)):
     table = tables[x]
     date_column = date_columns[x]
 
-    result = client.query_np("""
-    WITH 
-        (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""") AS start,
-        toStartOfDay(now()) AS end
-    SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
-    WHERE dates NOT IN
-    (SELECT DISTINCT toDate("""+date_column+""")
-    FROM megafon_dashboards_aggregate."""+table+""")""")
+    dateType_column = client.query_np("""
+    SELECT name FROM system.columns 
+    WHERE table = '"""+table+"""' AND (name = 'dateType' OR name = 'typeDate')""")
+
+    if(dateType_column.size != 0):
+        result = client.query_np("""
+        WITH 
+            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""" WHERE """+dateType_column[0][0]+""" = 'По дням') AS start,
+            toStartOfDay(now()) AS end
+        SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
+        WHERE dates NOT IN
+        (SELECT DISTINCT toDate("""+date_column+""")
+        FROM megafon_dashboards_aggregate."""+table+""")""")
+
+    else:
+        result = client.query_np("""
+        WITH 
+            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""") AS start,
+            toStartOfDay(now()) AS end
+        SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
+        WHERE dates NOT IN
+        (SELECT DISTINCT toDate("""+date_column+""")
+        FROM megafon_dashboards_aggregate."""+table+""")""")
 
     if result.size !=0:
         message_text = "{}:\n{}".format(table, result)
