@@ -22,30 +22,33 @@ month_range_name = os.getenv('month_range_name')
 tables = []
 date_columns = []
 
+
 def get_tables():
-  credentials = service_account.Credentials.from_service_account_info(json.loads(creds), scopes=["https://www.googleapis.com/auth/spreadsheets"])
-  service = build("sheets", "v4", credentials=credentials)
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(creds), scopes=["https://www.googleapis.com/auth/spreadsheets"])
+    service = build("sheets", "v4", credentials=credentials)
 
-  sheet = service.spreadsheets()
-  result = (
-      sheet.values()
-      .get(spreadsheetId=spreadsheet_id, range=month_range_name)
-      .execute()
-  )
-  values = result.get("values", [])
+    sheet = service.spreadsheets()
+    result = (
+        sheet.values()
+        .get(spreadsheetId=spreadsheet_id, range=month_range_name)
+        .execute()
+    )
+    values = result.get("values", [])
 
-  for row in values:
-      tables.append(row[0])
-      date_columns.append(row[1])
+    for row in values:
+        tables.append(row[0])
+        date_columns.append(row[1])
 
 
 if __name__ == "__main__":
-  get_tables()
+    get_tables()
 
 
 # функция для отправки сообщений в Телеграм
 bot_token = os.getenv('bot_token')
 channel_id = os.getenv('channel_id')
+
 
 def send_telegram_message(bot_token, channel_id, message):
     api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -58,7 +61,8 @@ host = os.getenv('host')
 username = os.getenv('ch_username')
 password = os.getenv('password')
 
-client = clickhouse_connect.get_client(host=host, port=8443, username=username, password=password, interface = "https")
+client = clickhouse_connect.get_client(
+    host=host, port=8443, username=username, password=password, interface="https")
 
 
 # проверка пропусков в таблицах ClickHouse из списка от минимальной даты до вчера
@@ -77,9 +81,10 @@ for x in range(len(tables)):
     WHERE months NOT IN
     (SELECT DISTINCT toDate("""+date_column+""")
     FROM megafon_dashboards_aggregate."""+table+""")""")
-    
+
     # отправка в Телеграм-канал, если есть пропуски
-    if result.size !=0:
+    if result.size != 0:
         message_text = "{}. {}:\n{}".format(message_count, table, result)
         send_telegram_message(bot_token, channel_id, message_text)
         message_count += 1
+    
