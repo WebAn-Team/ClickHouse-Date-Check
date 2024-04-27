@@ -36,13 +36,11 @@ def get_tables():
     )
     values = result.get("values", [])
 
-    for row in values:
-        tables.append(row[0])
-        date_columns.append(row[1])
+    return values
 
 
 if __name__ == "__main__":
-    get_tables()
+    sheets_values = get_tables()
 
 
 # функция для отправки сообщений в Телеграм
@@ -69,9 +67,15 @@ client = clickhouse_connect.get_client(
 # и отправка в Телеграм-канал
 message_count = 1
 
-for x in range(len(tables)):
-    table = tables[x]
-    date_column = date_columns[x]
+for x in range(len(sheets_values)):
+    table = sheets_values[x][0]
+    date_column = sheets_values[x][1]
+
+    # сохраняем исключения в переменную, если они есть
+    if len(sheets_values[x]) == 3:
+        exceptions = ", '" + sheets_values[x][2]
+    else:
+        exceptions = ''
 
     # если таблица сгруппирована по датам, неделям и месяцам,
     # то сохраняем название поля с типом даты
@@ -87,8 +91,9 @@ for x in range(len(tables)):
             toStartOfDay(now()) AS end
         SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
         WHERE dates NOT IN
-        (SELECT DISTINCT toDate("""+date_column+""")
-        FROM megafon_dashboards_aggregate."""+table+""")""")
+            (SELECT DISTINCT toDate("""+date_column+""")
+            FROM megafon_dashboards_aggregate."""+table+""")
+            AND dates NOT IN ('2000-01-01'"""+exceptions+""")""")
 
     # если нет, то просто проверка в поле с датами
     else:
@@ -98,11 +103,12 @@ for x in range(len(tables)):
             toStartOfDay(now()) AS end
         SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
         WHERE dates NOT IN
-        (SELECT DISTINCT toDate("""+date_column+""")
-        FROM megafon_dashboards_aggregate."""+table+""")""")
+            (SELECT DISTINCT toDate("""+date_column+""")
+            FROM megafon_dashboards_aggregate."""+table+""")
+            AND dates NOT IN ('2000-01-01'"""+exceptions+""")""")
 
     # отправка в Телеграм-канал, если есть пропуски
     if result.size != 0:
-        message_text = "{}. {}:\n{}".format(message_count, table, result)
+        message_text = "Дни {}. {}:\n{}".format(message_count, table, result)
         send_telegram_message(bot_token, channel_id, message_text)
         message_count += 1
