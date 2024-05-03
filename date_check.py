@@ -81,7 +81,7 @@ for x in range(len(sheets_values)):
     # то сохраняем название поля с типом даты
     dateType_column = client.query_np("""
     SELECT name FROM system.columns 
-    WHERE table = '"""+table+"""' AND (name = 'dateType' OR name = 'typeDate')""")
+    WHERE table = '"""+table+"""' AND (lower(name) = 'datetype' OR lower(name) = 'typedate')""")
 
     # если группировка по разным периодам есть, то проверка пропусков по типу "По дням"
     if (dateType_column.size != 0):
