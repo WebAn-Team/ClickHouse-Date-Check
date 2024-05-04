@@ -17,13 +17,9 @@ load_dotenv()
 # и сохранение названий таблиц и названий полей с датой
 creds = os.getenv('creds')
 spreadsheet_id = os.getenv('spreadsheet_id')
-date_range_name = os.getenv('date_range_name')
-
-tables = []
-date_columns = []
 
 
-def get_tables():
+def get_tables(sheets_range):
     credentials = service_account.Credentials.from_service_account_info(
         json.loads(creds), scopes=["https://www.googleapis.com/auth/spreadsheets"])
     service = build("sheets", "v4", credentials=credentials)
@@ -31,16 +27,12 @@ def get_tables():
     sheet = service.spreadsheets()
     result = (
         sheet.values()
-        .get(spreadsheetId=spreadsheet_id, range=date_range_name)
+        .get(spreadsheetId=spreadsheet_id, range=sheets_range)
         .execute()
     )
     values = result.get("values", [])
 
     return values
-
-
-if __name__ == "__main__":
-    sheets_values = get_tables()
 
 
 # функция для отправки сообщений в Телеграм
@@ -63,52 +55,63 @@ client = clickhouse_connect.get_client(
     host=host, port=8443, username=username, password=password, interface="https")
 
 
-# проверка пропусков в таблицах ClickHouse из списка от минимальной даты до вчера
+# проверка пропусков в таблицах ClickHouse из списка от минимальной даты до вчера для таблиц по дням
+# и до прошлого месяца для таблиц по месяцам
 # и отправка в Телеграм-канал
+database = os.getenv('database')
+range_names = json.loads(os.getenv('range_names'))
 message_count = 1
 
-for x in range(len(sheets_values)):
-    table = sheets_values[x][0]
-    date_column = sheets_values[x][1]
+for date_range in range(len(range_names)):
+    table_values = get_tables(range_names[date_range])
 
-    # сохраняем исключения в переменную, если они есть
-    if len(sheets_values[x]) == 3:
-        exceptions = ", '" + sheets_values[x][2]
+    #части запроса, отличающиеся между проверкой по дням и месяцам
+    if 'Month' in range_names[date_range]:
+        interval = '- INTERVAL 1 MONTH'
+        is_month = 'DISTINCT toStartOfMonth'
+        table_type = 'Месяцы'
     else:
-        exceptions = ''
+        interval = ''
+        is_month = ''
+        table_type = 'Дни'
 
-    # если таблица сгруппирована по датам, неделям и месяцам,
-    # то сохраняем название поля с типом даты
-    dateType_column = client.query_np("""
-    SELECT name FROM system.columns 
-    WHERE table = '"""+table+"""' AND (lower(name) = 'datetype' OR lower(name) = 'typedate')""")
+    for row in range(len(table_values)):
+        table = database + table_values[row][0]
+        date_column = table_values[row][1]
 
-    # если группировка по разным периодам есть, то проверка пропусков по типу "По дням"
-    if (dateType_column.size != 0):
+        # сохраняем исключения в переменную, если они есть
+        if len(table_values[row]) == 3:
+            exceptions = ", '" + table_values[row][2]
+        else:
+            exceptions = ''
+
+        # если таблица сгруппирована по датам, неделям и месяцам,
+        # то сохраняем название поля с типом даты
+        if table_type == 'Дни':
+            dateType_column = client.query_np("""
+            SELECT name FROM system.columns 
+            WHERE table = '"""+table_values[row][0]+"""' AND (lower(name) = 'datetype' OR lower(name) = 'typedate')""")
+
+        # если группировка по разным периодам есть, то проверка пропусков по типу "По дням"
+        if dateType_column.size != 0:
+            dateType_string = "WHERE "+dateType_column[0][0]+" = 'По дням'"
+        else:
+            dateType_string = ''
+
         result = client.query_np("""
         WITH 
-            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""" WHERE """+dateType_column[0][0]+""" = 'По дням') AS start,
-            toStartOfDay(now()) AS end
-        SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
+            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM """+table+""" """+dateType_string+""") AS start,
+            toStartOfDay(now()) """+interval+""" AS end
+        SELECT """+is_month+"""(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) dates
         WHERE dates NOT IN
             (SELECT DISTINCT toDate("""+date_column+""")
-            FROM megafon_dashboards_aggregate."""+table+""")
+            FROM """+table+""")
             AND dates NOT IN ('2000-01-01'"""+exceptions+""")""")
 
-    # если нет, то просто проверка в поле с датами
-    else:
-        result = client.query_np("""
-        WITH 
-            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM megafon_dashboards_aggregate."""+table+""") AS start,
-            toStartOfDay(now()) AS end
-        SELECT arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600))) dates
-        WHERE dates NOT IN
-            (SELECT DISTINCT toDate("""+date_column+""")
-            FROM megafon_dashboards_aggregate."""+table+""")
-            AND dates NOT IN ('2000-01-01'"""+exceptions+""")""")
-
-    # отправка в Телеграм-канал, если есть пропуски
-    if result.size != 0:
-        message_text = "Дни {}. {}:\n{}".format(message_count, table, result)
-        send_telegram_message(bot_token, channel_id, message_text)
-        message_count += 1
+        # отправка в Телеграм-канал, если есть пропуски
+        if result.size != 0:
+            message_text = "{} {}. {}:\n{}".format(
+                table_type, message_count, table, result)
+            print(message_text)
+            # send_telegram_message(bot_token, channel_id, message_text)
+            message_count += 1
