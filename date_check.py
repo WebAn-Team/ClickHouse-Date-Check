@@ -112,6 +112,5 @@ for date_range in range(len(range_names)):
         if result.size != 0:
             message_text = "{} {}. {}:\n{}".format(
                 table_type, message_count, table, result)
-            print(message_text)
-            # send_telegram_message(bot_token, channel_id, message_text)
+            send_telegram_message(bot_token, channel_id, message_text)
             message_count += 1
