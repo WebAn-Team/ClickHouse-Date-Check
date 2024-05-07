@@ -13,7 +13,7 @@ import requests
 load_dotenv()
 
 
-# подключение к таблице Google Sheets со списком обновляемых по дням таблиц в ClickHouse
+# подключение к таблице Google Sheets со списком обновляемых таблиц в ClickHouse
 # и сохранение названий таблиц и названий полей с датой
 creds = os.getenv('creds')
 spreadsheet_id = os.getenv('spreadsheet_id')
@@ -58,14 +58,13 @@ client = clickhouse_connect.get_client(
 # проверка пропусков в таблицах ClickHouse из списка от минимальной даты до вчера для таблиц по дням
 # и до прошлого месяца для таблиц по месяцам
 # и отправка в Телеграм-канал
-database = os.getenv('database')
 range_names = json.loads(os.getenv('range_names'))
 message_count = 1
 
 for date_range in range(len(range_names)):
     table_values = get_tables(range_names[date_range])
 
-    #части запроса, отличающиеся между проверкой по дням и месяцам
+    # части запроса, отличающиеся между проверкой по дням и месяцам
     if 'Month' in range_names[date_range]:
         interval = '- INTERVAL 1 MONTH'
         is_month = 'DISTINCT toStartOfMonth'
@@ -76,6 +75,10 @@ for date_range in range(len(range_names)):
         table_type = 'Дни'
 
     for row in range(len(table_values)):
+        database = client.query_np("""
+            SELECT DISTINCT database FROM system.columns 
+            WHERE table = '"""+table_values[row][0]+"""' """)[0][0]
+
         table = database + table_values[row][0]
         date_column = table_values[row][1]
 
@@ -87,10 +90,9 @@ for date_range in range(len(range_names)):
 
         # если таблица сгруппирована по датам, неделям и месяцам,
         # то сохраняем название поля с типом даты
-        if table_type == 'Дни':
-            dateType_column = client.query_np("""
-            SELECT name FROM system.columns 
-            WHERE table = '"""+table_values[row][0]+"""' AND (lower(name) = 'datetype' OR lower(name) = 'typedate')""")
+        dateType_column = client.query_np("""
+        SELECT name FROM system.columns 
+        WHERE table = '"""+table_values[row][0]+"""' AND (lower(name) = 'datetype' OR lower(name) = 'typedate')""")
 
         # если группировка по разным периодам есть, то проверка пропусков по типу "По дням"
         if dateType_column.size != 0:
