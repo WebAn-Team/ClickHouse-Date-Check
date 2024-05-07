@@ -79,7 +79,7 @@ for date_range in range(len(range_names)):
             SELECT DISTINCT database FROM system.columns 
             WHERE table = '"""+table_values[row][0]+"""' """)[0][0]
 
-        table = database + table_values[row][0]
+        table = database + '.' + table_values[row][0]
         date_column = table_values[row][1]
 
         # сохраняем исключения в переменную, если они есть
@@ -114,5 +114,6 @@ for date_range in range(len(range_names)):
         if result.size != 0:
             message_text = "{} {}. {}:\n{}".format(
                 table_type, message_count, table, result)
-            send_telegram_message(bot_token, channel_id, message_text)
+            print(message_text)
+            #send_telegram_message(bot_token, channel_id, message_text)
             message_count += 1
