@@ -1,7 +1,7 @@
 name: Date Check
 on: 
   schedule: 
-      - cron: '40 6 * * 1-5'
+      - cron: '55 6 * * 1-5'
 
 env:
   creds: ${{ secrets.creds }}

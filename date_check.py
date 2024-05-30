@@ -67,11 +67,11 @@ for date_range in range(len(range_names)):
     # части запроса, отличающиеся между проверкой по дням и месяцам
     if 'Month' in range_names[date_range]:
         interval = '- INTERVAL 1 MONTH'
-        is_month = 'DISTINCT toStartOfMonth'
+        start_of_month_str = 'DISTINCT toStartOfMonth'
         table_type = 'Месяцы'
     else:
         interval = ''
-        is_month = ''
+        start_of_month_str = ''
         table_type = 'Дни'
 
     for row in range(len(table_values)):
@@ -104,7 +104,7 @@ for date_range in range(len(range_names)):
         WITH 
             (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM """+table+""" """+dateType_string+""") AS start,
             toStartOfDay(now()) """+interval+""" AS end
-        SELECT """+is_month+"""(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) dates
+        SELECT """+start_of_month_str+"""(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) dates
         WHERE dates NOT IN
             (SELECT DISTINCT toDate("""+date_column+""")
             FROM """+table+""")
