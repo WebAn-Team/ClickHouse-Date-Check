@@ -63,6 +63,9 @@ message_count = 1
 
 for date_range in range(len(range_names)):
     table_values = get_tables(range_names[date_range])
+
+    # дебаг
+    print('таблица вся')
     print(table_values)
 
     # части запроса, отличающиеся между проверкой по дням и месяцам
@@ -76,6 +79,12 @@ for date_range in range(len(range_names)):
         table_type = 'Дни'
 
     for row in range(len(table_values)):
+        
+        # дебаг
+        print('строка')
+        print(table_values[row][0])
+        print(table_values[row][1])
+        
         database = client.query_np("""
             SELECT DISTINCT database FROM system.columns 
             WHERE table = '"""+table_values[row][0]+"""' """)[0][0]
