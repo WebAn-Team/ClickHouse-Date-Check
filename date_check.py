@@ -63,6 +63,7 @@ message_count = 1
 
 for date_range in range(len(range_names)):
     table_values = get_tables(range_names[date_range])
+    print(table_values)
 
     # части запроса, отличающиеся между проверкой по дням и месяцам
     if 'Month' in range_names[date_range]:
