@@ -118,6 +118,18 @@ for date_range in range(len(range_names)):
         else:
             dateType_string = ''
 
+        # запрос
+        print('запрос')
+        print(f"""
+        WITH 
+            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM """+table+""" """+dateType_string+""") AS start,
+            toStartOfDay(now()) """+interval+""" AS end
+        SELECT """+start_of_month_str+"""(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) dates
+        WHERE dates NOT IN
+            (SELECT DISTINCT toDate("""+date_column+""")
+            FROM """+table+""")
+            AND dates NOT IN ('2000-01-01'"""+exceptions+""")""")
+        
         result = client.query_np("""
         WITH 
             (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM """+table+""" """+dateType_string+""") AS start,
