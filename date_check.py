@@ -84,18 +84,12 @@ for date_range in range(len(range_names)):
         print('строка')
         print(table_values[row][0])
         print(table_values[row][1])
-
-        # дебаг первой части
-        print(f"""
-            SELECT DISTINCT database FROM system.columns 
-            WHERE table = '"""+table_values[row][0]+"""' """)[0][0])
+        print("начало первого запроса")
         
         database = client.query_np("""
             SELECT DISTINCT database FROM system.columns 
             WHERE table = '"""+table_values[row][0]+"""' """)[0][0]
 
-        #дебаг первой части
-        print('запрос выше прошел')
 
         table = database + '.' + table_values[row][0]
         date_column = table_values[row][1]
@@ -106,6 +100,9 @@ for date_range in range(len(range_names)):
         else:
             exceptions = ''
 
+        # еще дебаг
+        print("начало второго зaапроса")
+            
         # если таблица сгруппирована по датам, неделям и месяцам,
         # то сохраняем название поля с типом даты
         dateType_column = client.query_np("""
@@ -119,16 +116,7 @@ for date_range in range(len(range_names)):
             dateType_string = ''
 
         # запрос
-        print('запрос')
-        print(f"""
-        WITH 
-            (SELECT toStartOfDay(toDate(MIN("""+date_column+"""))) FROM """+table+""" """+dateType_string+""") AS start,
-            toStartOfDay(now()) """+interval+""" AS end
-        SELECT """+start_of_month_str+"""(arrayJoin(arrayMap(x -> toDate(x), range(toUInt32(assumeNotNull(start)), toUInt32(end), 24 * 3600)))) dates
-        WHERE dates NOT IN
-            (SELECT DISTINCT toDate("""+date_column+""")
-            FROM """+table+""")
-            AND dates NOT IN ('2000-01-01'"""+exceptions+""")""")
+        print('начало третьего запроса')
         
         result = client.query_np("""
         WITH 
