@@ -84,10 +84,18 @@ for date_range in range(len(range_names)):
         print('строка')
         print(table_values[row][0])
         print(table_values[row][1])
+
+        # дебаг первой части
+        print(f"""
+            SELECT DISTINCT database FROM system.columns 
+            WHERE table = '"""+table_values[row][0]+"""' """)[0][0])
         
         database = client.query_np("""
             SELECT DISTINCT database FROM system.columns 
             WHERE table = '"""+table_values[row][0]+"""' """)[0][0]
+
+        #дебаг первой части
+        print('запрос выше прошел')
 
         table = database + '.' + table_values[row][0]
         date_column = table_values[row][1]
