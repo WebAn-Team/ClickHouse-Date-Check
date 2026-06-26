@@ -1,3 +1,6 @@
 /.venv
 .env
 /tests
+RootCA.pem
+__pycache__/
+date_check.log
